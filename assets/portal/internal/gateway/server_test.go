@@ -23,7 +23,7 @@ func fixture(t *testing.T, upstream http.Handler) (*Server, *httptest.Server) {
 	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("portal-shell"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	s, e := New(Config{Prefix: "/app/octop-portal", Upstream: backend.URL, StaticDir: dir, GatewayPeerUIDs: []uint32{0}, AdminsOnly: true, PublicHosts: []string{"portal.test"}, LeaseSeconds: 30})
+	s, e := New(Config{Prefix: "/app/example-portal", Upstream: backend.URL, StaticDir: dir, GatewayPeerUIDs: []uint32{0}, AdminsOnly: true, PublicHosts: []string{"portal.test"}, LeaseSeconds: 30})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -43,12 +43,12 @@ func req(path string, peer bool) *http.Request {
 func session(t *testing.T, s *Server) *http.Cookie {
 	t.Helper()
 	w := httptest.NewRecorder()
-	s.ServeHTTP(w, req("/app/octop-portal/", true))
+	s.ServeHTTP(w, req("/app/example-portal/", true))
 	if w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}
 	cs := w.Result().Cookies()
-	if len(cs) != 1 || !cs[0].HttpOnly || cs[0].Path != "/app/octop-portal/" {
+	if len(cs) != 1 || !cs[0].HttpOnly || cs[0].Path != "/app/example-portal/" {
 		t.Fatal("missing scoped session cookie")
 	}
 	return cs[0]
@@ -61,17 +61,17 @@ func TestAuthorizationAndPaths(t *testing.T) {
 		mutate     func(*http.Request)
 		code       int
 	}{
-		{"forged NAS identity without Unix peer", "/app/octop-portal/", false, nil, 403},
-		{"missing NAS identity", "/app/octop-portal/", true, func(r *http.Request) { r.Header.Del("X-Trim-Userid") }, 403},
-		{"ordinary NAS user", "/app/octop-portal/", true, func(r *http.Request) { r.Header.Set("X-Trim-Isadmin", "false") }, 403},
-		{"host not allowed", "/app/octop-portal/", true, func(r *http.Request) { r.Host = "evil.test" }, 403},
-		{"cross-origin", "/app/octop-portal/", true, func(r *http.Request) { r.Header.Set("Origin", "https://evil.test") }, 403},
-		{"prefix boundary", "/app/octop-portal-bypass/", true, nil, 404},
-		{"encoded traversal", "/app/octop-portal/%2e%2e/config.json", true, nil, 400},
-		{"API without portal session", "/app/octop-portal/api/agents", true, nil, 401},
-		{"missing asset is not SPA", "/app/octop-portal/assets/missing.js", true, nil, 404},
-		{"source maps forbidden", "/app/octop-portal/assets/app.js.map", true, nil, 404},
-		{"SPA deep route", "/app/octop-portal/settings/models", true, nil, 200},
+		{"forged NAS identity without Unix peer", "/app/example-portal/", false, nil, 403},
+		{"missing NAS identity", "/app/example-portal/", true, func(r *http.Request) { r.Header.Del("X-Trim-Userid") }, 403},
+		{"ordinary NAS user", "/app/example-portal/", true, func(r *http.Request) { r.Header.Set("X-Trim-Isadmin", "false") }, 403},
+		{"host not allowed", "/app/example-portal/", true, func(r *http.Request) { r.Host = "evil.test" }, 403},
+		{"cross-origin", "/app/example-portal/", true, func(r *http.Request) { r.Header.Set("Origin", "https://evil.test") }, 403},
+		{"prefix boundary", "/app/example-portal-bypass/", true, nil, 404},
+		{"encoded traversal", "/app/example-portal/%2e%2e/config.json", true, nil, 400},
+		{"API without portal session", "/app/example-portal/api/items", true, nil, 401},
+		{"missing asset is not SPA", "/app/example-portal/assets/missing.js", true, nil, 404},
+		{"source maps forbidden", "/app/example-portal/assets/app.js.map", true, nil, 404},
+		{"SPA deep route", "/app/example-portal/settings/models", true, nil, 200},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := req(tc.path, tc.peer)
@@ -89,7 +89,7 @@ func TestAuthorizationAndPaths(t *testing.T) {
 		})
 	}
 }
-func TestProxyPreservesOctopAuthAndDropsNASSecrets(t *testing.T) {
+func TestProxyPreservesApplicationAuthAndDropsNASSecrets(t *testing.T) {
 	var gotPath, gotAuth, gotCookie, gotNAS, gotQuery string
 	s, _ := fixture(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
@@ -100,17 +100,17 @@ func TestProxyPreservesOctopAuthAndDropsNASSecrets(t *testing.T) {
 		w.WriteHeader(204)
 	}))
 	c := session(t, s)
-	r := req("/app/octop-portal/api/agents/a/workspace/file?path=a%2Fb.md", true)
+	r := req("/app/example-portal/api/files/download?path=a%2Fb.md", true)
 	r.AddCookie(c)
 	r.AddCookie(&http.Cookie{Name: "NASSecret", Value: "never-forward"})
-	r.Header.Set("Authorization", "Bearer octop-token")
+	r.Header.Set("Authorization", "Bearer example-token")
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, r)
-	if w.Code != 204 || gotPath != "/api/agents/a/workspace/file" || gotQuery != "path=a%2Fb.md" || gotAuth != "Bearer octop-token" || gotCookie != "" || gotNAS != "" {
+	if w.Code != 204 || gotPath != "/api/files/download" || gotQuery != "path=a%2Fb.md" || gotAuth != "Bearer example-token" || gotCookie != "" || gotNAS != "" {
 		t.Fatalf("incorrect proxy scope: %d path=%s query=%s", w.Code, gotPath, gotQuery)
 	}
 	// A NAS user cannot reuse a different user's portal cookie.
-	r = req("/app/octop-portal/api/agents", true)
+	r = req("/app/example-portal/api/items", true)
 	r.Header.Set("X-Trim-Userid", "1001")
 	r.AddCookie(c)
 	w = httptest.NewRecorder()
@@ -140,7 +140,7 @@ func TestExpiredLeaseClosesWebSocketTunnel(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer c.Close()
-	_, e = fmt.Fprintf(c, "GET /app/octop-portal/api/test/ws HTTP/1.1\r\nHost: portal.test\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nX-Trim-Userid: 1000\r\nX-Trim-Username: admin\r\nX-Trim-Isadmin: true\r\nCookie: %s=%s\r\n\r\n", cookie.Name, cookie.Value)
+	_, e = fmt.Fprintf(c, "GET /app/example-portal/api/test/ws HTTP/1.1\r\nHost: portal.test\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nX-Trim-Userid: 1000\r\nX-Trim-Username: admin\r\nX-Trim-Isadmin: true\r\nCookie: %s=%s\r\n\r\n", cookie.Name, cookie.Value)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -167,7 +167,7 @@ func TestExpiredLeaseClosesWebSocketTunnel(t *testing.T) {
 func TestLeaseRenewalRequiresNASIdentity(t *testing.T) {
 	s, _ := fixture(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	cookie := session(t, s)
-	r := req("/app/octop-portal/__portal/lease", false)
+	r := req("/app/example-portal/__portal/lease", false)
 	r.Method = "POST"
 	r.AddCookie(cookie)
 	r.Header.Set("X-App-Portal", "lease")
@@ -176,7 +176,7 @@ func TestLeaseRenewalRequiresNASIdentity(t *testing.T) {
 	if w.Code != 403 {
 		t.Fatal("renewal accepted forged gateway identity")
 	}
-	r = req("/app/octop-portal/__portal/lease", true)
+	r = req("/app/example-portal/__portal/lease", true)
 	r.Method = "POST"
 	r.AddCookie(cookie)
 	r.Header.Set("X-App-Portal", "lease")

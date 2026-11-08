@@ -79,7 +79,7 @@ func New(cfg Config) (*Server, error) {
 		}
 		pr.SetXForwarded()
 		pr.Out.Header.Set("X-Forwarded-Prefix", cfg.Prefix)
-		// NAS session credentials and identity do not belong to the Octop backend.
+		// NAS session credentials and identity do not belong to the application backend.
 		pr.Out.Header.Del("Cookie")
 		for k := range pr.Out.Header {
 			if strings.HasPrefix(strings.ToLower(k), "x-trim-") {
@@ -98,7 +98,7 @@ func New(cfg Config) (*Server, error) {
 			if !errors.Is(e, context.Canceled) {
 				log.Printf("upstream unavailable method=%s", r.Method)
 			}
-			http.Error(w, "Octop backend unavailable", http.StatusBadGateway)
+				http.Error(w, "Application backend unavailable", http.StatusBadGateway)
 		}}
 	go func() {
 		t := time.NewTicker(time.Second)

@@ -9,8 +9,8 @@ python scripts/check_entry.py \
   --base https://nas.example.com \
   --prefix /app/example-portal \
   --dashboard /path/to/dashboard \
-  --api-path /api/agents \
-  --ws-path /api/browser-stream/ws \
+  --api-path /api/example \
+  --ws-path /api/events/ws \
   --output /path/to/local-evidence/anonymous.json \
   --dry-run
 ~~~
@@ -46,7 +46,7 @@ python scripts/check_entry.py \
 | 首页能开但白屏 | index 的实际 JS/CSS 路径、MIME、prefix、旧缓存及 SPA fallback |
 | 流式变成整段返回 | 响应缓冲、Flush、业务链路和客户端，不只看健康检查 |
 | WS 失败 | 真实 Upgrade、路径前缀、Origin、租约以及后端业务 token |
-| 红色文件链接不能预览 | Markdown URL 转换、前缀识别、预览 Context 与真实工作区权限 |
+| 文件链接不能打开或预览 | 应用自己的 URL 解析、路径前缀、预览入口和后端文件权限 |
 | 手机顶部大留白 | 飞牛原生栏和网页 safe-area 是否叠加 |
 | 应用用户读不到文件 | 精确文件所有者和 NAS ACL，不全局 chmod/chown |
 | 更新后旧前端仍在 | FPK/静态修复类型、实际版本、manifest 和线上资源哈希 |

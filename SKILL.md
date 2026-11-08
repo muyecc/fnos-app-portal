@@ -1,6 +1,6 @@
 ---
 name: fnos-app-portal
-description: 将已有 Docker Web 应用接入飞牛 fnOS 桌面和手机 App，复用飞牛统一网关及登录校验。提供可编译网关、FPK 模板、Octop 前端适配脚本和验收方法；支持部署、HTTP/IP 兼容及后续升级，不改飞牛底层或自带插件。
+description: 将已有 Docker Web 应用接入飞牛 fnOS 桌面和手机 App，复用飞牛统一网关及登录校验。提供通用接入网关、FPK 模板、前端适配接口和验收方法；支持部署、HTTP/IP 兼容及后续升级，不改飞牛底层或自带插件。
 metadata:
   author: "微信公众号：就是会玩儿"
 ---
@@ -14,15 +14,15 @@ metadata:
 本 Skill 包含源码、测试和工具，不是已经适配所有应用的一键安装包：
 
 - 网关基线：SPA 静态前端、根路径 /api/、Authorization/Bearer 业务鉴权。
-- Octop 适配器：针对已研究的 1.0.3b4 源码形态，对补丁位置和数量做断言。
-- 其他应用：先检查 API 前缀、Cookie 登录、OAuth 回调、绝对重定向和 WebSocket 路径；不兼容时改适配层并补测试，不关闭鉴权。
+- 应用兼容：先检查原生子路径配置、API 前缀、Cookie 登录、OAuth 回调、绝对重定向和 WebSocket 路径；优先配置，确需代码适配时在目标应用的独立工作目录实施并补测试，不关闭鉴权。
+- 本仓库不附带特定应用的补丁、源码下载器或前端构建脚本；不能把通用模板理解为任意服务都可直接部署。
 - FPK 模板：x86 参考基线；其他 CPU/固件先核对官方支持。
 
 网关会剥离 Cookie、X-Trim-* 和后端 Set-Cookie。依赖业务 Cookie 的应用不能原样使用此模板。详见 [架构与边界](references/architecture.md)。
 
 ## 按任务读取材料
 
-- 第一次接入：先读 architecture.md、fnos-package.md，再读 frontend-octop.md。
+- 第一次接入：先读 [架构与边界](references/architecture.md)、[FPK 打包](references/fnos-package.md)，再读 [通用前端适配接口](references/frontend.md)。
 - 域名正常、内网 IP 报无授权，或需要保留直达入口：读 [HTTP 与内网入口](references/http-lan.md)。
 - 升级已有接入：读 [发布与升级](references/release.md)，不要从头重装。
 - 白屏、401/403、手机留白、文件预览或流式故障：读 [验收与排错](references/acceptance.md)。
@@ -50,7 +50,7 @@ metadata:
 将本 Skill 的位置记为 SKILL_DIR，将新建工作目录记为 WORK。不要在原业务容器或已经打补丁的源码目录重复修改。
 
 1. 复制 references/plan.example.json 到工作目录填写实际参数。只有实测确认 peer UID 后，才将 peer_uid_verified 改为 true。
-2. 为目标应用准备带 portal-build.json 的前端。Octop 使用下面的专用适配流程；其他应用按 frontend-octop.md 的产物接口实现。
+2. 按 [通用前端适配接口](references/frontend.md) 检查目标应用，使用其原生子路径配置或独立适配流程构建匹配前端，接入浏览器租约续验，并生成 portal-build.json。这里没有通用的一键前端转换命令。
 3. 渲染新项目，先 dry-run，再执行：
 
 ~~~bash
@@ -86,28 +86,6 @@ python "$SKILL_DIR/scripts/build_package.py" \
   --fnpack /path/to/fnpack --dry-run
 # 核对后去掉 --dry-run。该工具只打包，不安装到 NAS。
 ~~~
-
-## Octop 专用前端流程
-
-首先阅读 references/frontend-octop.md。需要用户目标版本的官方源码归档、完整 commit 和归档 SHA-256。
-
-~~~bash
-python "$SKILL_DIR/scripts/prepare_octop_source.py" \
-  --archive "$WORK/upstream.zip" --sha256 VERIFIED_SHA256 \
-  --commit VERIFIED_COMMIT --version TARGET_VERSION \
-  --output "$WORK/source" --dry-run
-# 核对后去掉 --dry-run；只解压到全新目录。
-
-npm --prefix "$WORK/source/dashboard" ci --ignore-scripts --no-audit --no-fund
-
-python "$SKILL_DIR/scripts/build_octop_frontend.py" \
-  --source "$WORK/source" --output "$WORK/dashboard" \
-  --app-id example-portal --version TARGET_VERSION \
-  --commit VERIFIED_COMMIT --dry-run
-# 核对后去掉 --dry-run：应用补丁、类型检查、回归测试和生产构建。
-~~~
-
-适配器包含 API/WS 子路径、工作区文件预览、业务登录键隔离、PWA 清理边界和手机顶部布局修复。匹配失败说明上游发生变化；审查差异后更新适配器，不删除断言强行通过。
 
 ## 上线顺序
 

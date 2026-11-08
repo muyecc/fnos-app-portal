@@ -15,7 +15,7 @@ import (
 func lanFixture(t *testing.T) *Server {
 	t.Helper()
 	s, _ := fixture(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer octop-test" {
+		if r.Header.Get("Authorization") != "Bearer example-test" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -57,7 +57,7 @@ func TestLANOriginAndIdentityBoundaries(t *testing.T) {
 		{"duplicate origins", "192.168.1.10", "http://192.168.1.10:5666", func(r *http.Request) { r.Header.Add("Origin", "https://evil.test") }, 403},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := req("/app/octop-portal/__portal/lease", true)
+			r := req("/app/example-portal/__portal/lease", true)
 			r.Method = "POST"
 			r.Host = tc.host
 			r.Header.Set("Origin", tc.origin)
@@ -96,7 +96,7 @@ func TestLANBrowserCookieRoundTripAndHTTPSIsolation(t *testing.T) {
 	})}
 	request := func(method, origin, path, auth string) *http.Response {
 		t.Helper()
-		r, _ := http.NewRequest(method, origin+"/app/octop-portal/"+path, nil)
+		r, _ := http.NewRequest(method, origin+"/app/example-portal/"+path, nil)
 		if method == "POST" {
 			r.Header.Set("Origin", origin)
 			r.Header.Set("X-App-Portal", "lease")
@@ -121,9 +121,9 @@ func TestLANBrowserCookieRoundTripAndHTTPSIsolation(t *testing.T) {
 		t.Fatal("browser could not retain and renew the HTTP lease")
 	}
 	if response = request("GET", lan, "api/agents", ""); response.StatusCode != 401 {
-		t.Fatal("NAS login bypassed Octop authentication")
+		t.Fatal("NAS login bypassed Application authentication")
 	}
-	if response = request("GET", lan, "api/agents", "Bearer octop-test"); response.StatusCode != 204 {
+	if response = request("GET", lan, "api/agents", "Bearer example-test"); response.StatusCode != 204 {
 		body, _ := io.ReadAll(response.Body)
 		t.Fatalf("HTTP browser lease failed: %d %s", response.StatusCode, body)
 	}
@@ -132,12 +132,12 @@ func TestLANBrowserCookieRoundTripAndHTTPSIsolation(t *testing.T) {
 	if response.StatusCode != 200 || len(cs) != 1 || cs[0].Name != cookieName || !cs[0].Secure || !cs[0].HttpOnly || cs[0].Value == key {
 		t.Fatal("HTTPS domain cookie was weakened or shared with LAN")
 	}
-	plainDomain, _ := url.Parse("http://nas.example.com/app/octop-portal/")
+	plainDomain, _ := url.Parse("http://nas.example.com/app/example-portal/")
 	if len(jar.Cookies(plainDomain)) != 0 {
 		t.Fatal("domain's Secure cookie leaked to HTTP")
 	}
 	// Forwarded headers cannot select the less strict LAN policy on the domain.
-	r := req("/app/octop-portal/", true)
+	r := req("/app/example-portal/", true)
 	r.Host = "nas.example.com"
 	r.Header.Set("X-Forwarded-Host", "192.168.1.10")
 	r.Header.Set("X-Forwarded-Proto", "http")

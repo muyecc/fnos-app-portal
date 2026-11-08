@@ -4,7 +4,7 @@
 
 **作者：微信公众号：就是会玩儿**
 
-这是公众号文章配套的 AI Skill 工程。除了执行说明，还提供可编译的 Go 接入网关、FPK 工程模板、Octop 前端适配脚本、测试与验收文档。你可以把整个目录交给 AI，让它先检查你的环境，再完成针对性的适配。
+这是公众号文章配套的通用 AI Skill 工程。除了执行说明，还提供可编译的 Go 接入网关、FPK 工程模板、前端适配接口、测试与验收文档。你可以把整个目录交给 AI，让它先检查你的环境，再完成针对性的适配。
 
 > 本仓库是源码、模板和操作方法，不是适配全部应用的一键安装器。公开模板的验证范围见 [VALIDATION.md](VALIDATION.md)，使用前需要针对自己的 NAS 和应用完成构建与验收。
 
@@ -14,7 +14,7 @@
 - 飞牛入口先校验 NAS 登录和用户策略，再保留原应用自己的业务登录。
 - 用独立接入包提供前端和代理，不接管原应用的账号、数据库与业务数据。
 - 为子路径下的 API、WebSocket、流式响应和文件预览提供适配方法。
-- 处理手机顶部留白、域名与内网 HTTP/IP 访问差异等实际问题。
+- 提供手机布局、域名与内网 HTTP/IP 访问差异等问题的检查方法。
 - 将接入层和业务层分开维护，便于后续持续追更应用版本。
 
 它不提供新的公网网络通道。异地访问仍需要你的飞牛入口本身可达，例如已有的域名入口或飞牛远程访问方式。
@@ -53,7 +53,7 @@ HTTPS 是优先选择。用户明确需要 HTTP/IP 时，模板允许精确的�
 | --- | --- |
 | 应用形态 | SPA 静态前端，业务 API 位于 `/api/` |
 | 业务认证 | `Authorization: Bearer …` / JWT |
-| Octop 适配器 | 以 `1.0.3b4` 的源码结构为研究基线 |
+| 前端准备 | 使用目标应用的原生配置或独立适配流程构建，本仓库不附带特定应用补丁 |
 | FPK 模板 | x86 / Linux amd64 参考基线 |
 | NAS 与应用账号 | 相互独立，不自动映射，不构成业务账号 SSO |
 
@@ -93,7 +93,7 @@ git clone https://github.com/muyecc/fnos-app-portal.git
 1. **建立基线**：检查目标 NAS、现有容器、镜像、挂载、可写层、端口和真实转发进程身份，不直接照搬示例参数。
 2. **确认访问策略**：明确允许哪些 NAS 用户进入，以及是否保留内网直达；按需读取相关文档。
 3. **准备独立工作目录**：复制 [计划示例](references/plan.example.json)，填写目标环境参数。只有实测确认 peer UID 后才能标记 `peer_uid_verified`。
-4. **构建匹配前端**：Octop 按 [专用流程](references/frontend-octop.md) 校验上游归档、应用补丁、测试并构建；其他应用先适配对应接口。
+4. **构建匹配前端**：按 [通用接口](references/frontend.md) 核对原生子路径能力、API/WS 和登录机制，完成浏览器租约续验、目标项目测试及构建，生成前端 manifest；本仓库不提供一键转换任意前端的脚本。
 5. **构建接入项目**：使用 `render_project.py` 渲染，再运行 `build_gateway.py`。先检查各脚本的 `--help`，并使用 `--dry-run` 核对输入。
 6. **准备镜像与 FPK**：按 [打包说明](references/fnos-package.md) 构建镜像，再用 `build_package.py` 调用官方 `fnpack`。本地有镜像不代表 NAS 已经有镜像。
 7. **隔离测试后上线**：使用独立 Compose project/service 标签验证，通过飞牛原生应用中心安装或更新接入包。
@@ -105,7 +105,7 @@ git clone https://github.com/muyecc/fnos-app-portal.git
 
 - Python 3.10+：计划渲染、来源校验、打包辅助和入口检查。
 - Go 1.24+：网关构建与测试。
-- Node.js / npm：按目标应用上游要求选择版本，用于前端适配与构建。
+- 目标应用的前端工具链：需要构建时按上游要求准备，例如 Node.js / npm；本仓库不固定某一种框架或构建器。
 - Docker：构建镜像及 Linux 隔离测试。
 - 官方 `fnpack`：FPK 打包。
 - 已有的 NAS 管理与浏览器工具：用于授权范围内的检查、部署及验收。
@@ -132,12 +132,11 @@ go vet ./...
 | [SKILL.md](SKILL.md) | AI 执行入口、任务路由、构建步骤与操作边界 |
 | [references/architecture.md](references/architecture.md) | 数据流、接口、认证与信任边界 |
 | [references/fnos-package.md](references/fnos-package.md) | FPK、权限、资源与生命周期 |
-| [references/frontend-octop.md](references/frontend-octop.md) | Octop 源码校验、前端适配与构建 |
+| [references/frontend.md](references/frontend.md) | 通用子路径适配、浏览器租约和前端产物接口 |
 | [references/http-lan.md](references/http-lan.md) | HTTP/IP 兼容与可选内网直达 |
 | [references/acceptance.md](references/acceptance.md) | 验收清单与故障定位 |
 | [references/release.md](references/release.md) | 发布、升级与公开交付边界 |
 | [assets/portal](assets/portal) | Go 网关、测试、Dockerfile 与 FPK 模板 |
-| [assets/octop-frontend](assets/octop-frontend) | 前端适配模块与回归测试 |
 | [assets/lan-access](assets/lan-access) | 可选独立内网转发模板 |
 | [scripts](scripts) | 准备、渲染、构建、打包和检查工具 |
 | [VALIDATION.md](VALIDATION.md) | 发布前已做的验证及未覆盖范围 |
@@ -145,14 +144,14 @@ go vet ./...
 
 ## 后续怎么追更
 
-业务版本和接入版本分别记录。每次更新先核对上游 commit、归档 SHA-256、镜像来源和前端变化，再在新目录运行适配器；补丁位置或数量断言失败时，要检查真实差异，不能删除断言强行构建。
+业务版本和接入版本分别记录。每次更新先核对上游 commit、归档 SHA-256、镜像来源和前端变化，再在新目录使用目标项目的配置或适配流程。维护补丁时应校验目标版本和变更位置，检查失败先审查差异，不删除校验强行构建。
 
-前端必须匹配后端版本，完整能力不能因上游 full/lite 标签变化而丢失。网关、权限、启动配置或上游版本变化时，走预检后的 FPK 原生更新。所有临时测试项目要与生产隔离，升级不应通过整机重启或卸载重装来完成。
+前端必须匹配后端版本，原有能力不能因上游镜像功能变体或打包方式变化而丢失。网关、权限、启动配置或上游版本变化时，走预检后的 FPK 原生更新。所有临时测试项目要与生产隔离，升级不应通过整机重启或卸载重装来完成。
 
 备份策略按使用者要求执行；不备份也不能忽略容器可写层里的运行数据。更多细节见 [发布与长期追更](references/release.md)。
 
 ## 验证状态与问题反馈
 
-发布前已通过 Python 工具测试、Go 测试与 vet、Linux 隔离网关测试、Octop 适配 dry-run 等检查，详细记录见 [VALIDATION.md](VALIDATION.md)。**本次公开模板未重新完成整套前端生产构建、FPK 打包和目标 NAS 部署验收。**
+通用网关和辅助工具的验证记录见 [VALIDATION.md](VALIDATION.md)。**目标应用的前端构建、FPK 打包和真实 NAS 部署验收需要在各自环境完成，不能由模板测试代替。**
 
 反馈问题时请提供脱敏后的应用版本、NAS/CPU 信息、访问方式、失败步骤及相关错误，不要上传 OAuth profile、令牌、真实 `.env`、数据库、业务上传文件、完整容器 inspect 或私有镜像。
