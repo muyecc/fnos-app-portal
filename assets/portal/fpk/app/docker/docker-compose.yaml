@@ -1,0 +1,36 @@
+services:
+  gateway:
+    image: example-portal-local:1.0.1
+    pull_policy: never
+    container_name: example-portal-gateway
+    user: "${TRIM_UID}:${TRIM_GID}"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 192m
+    cpus: 1.0
+    pids_limit: 64
+    volumes:
+      - "${TRIM_APPDEST}:/app/target:rw"
+      - "${TRIM_APPDEST}/config.json:/app/target/config.json:ro"
+      - "${TRIM_APPDEST}/dashboard:/app/target/dashboard:ro"
+      - "${TRIM_APPDEST}/docker:/app/target/docker:ro"
+      - "${TRIM_APPDEST}/ui:/app/target/ui:ro"
+    networks:
+      - backend
+    healthcheck:
+      test: [CMD, /portal, -healthcheck]
+      interval: 15s
+      timeout: 4s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+networks:
+  backend:
+    external: true
+    name: example_default

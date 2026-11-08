@@ -1,0 +1,12 @@
+#!/bin/bash
+set -eu
+case "${1:-}" in
+  start|stop)
+    # Only this package's Docker resource is managed by appcenter.
+    exit 0
+    ;;
+  status)
+    if [ -S "${TRIM_APPDEST}/app.sock" ]; then exit 0; else exit 3; fi
+    ;;
+  *) exit 1 ;;
+esac

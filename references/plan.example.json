@@ -1,0 +1,22 @@
+{
+  "app_id": "example-portal",
+  "display_name": "Example App",
+  "package_version": "0.1.0",
+  "architecture": "amd64",
+  "upstream_version": "1.0.0",
+  "upstream": "http://example-app:8088",
+  "docker_network": "example_default",
+  "gateway_peer_uids": [
+    0
+  ],
+  "peer_uid_verified": false,
+  "admins_only": true,
+  "allowed_user_ids": [],
+  "public_hosts": [
+    "nas.example.com"
+  ],
+  "allowed_origins": [
+    "https://nas.example.com"
+  ],
+  "http_cookie_ips": []
+}

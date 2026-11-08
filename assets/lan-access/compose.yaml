@@ -1,0 +1,37 @@
+name: app-lan
+services:
+  lan:
+    image: "${LAN_PROXY_IMAGE:?Specify a verified pinned local image}"
+    pull_policy: never
+    container_name: app-lan
+    entrypoint: []
+    command: ["nginx", "-c", "/etc/app-lan/nginx.conf", "-g", "daemon off;"]
+    user: "${LAN_UID:-1000}:${LAN_GID:-1000}"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 64m
+    pids_limit: 64
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m,mode=1777
+    ports:
+      - "${LAN_BIND_IP:?Specify NAS private IP}:${LAN_PORT:?Specify port}:8088"
+    volumes:
+      - ./nginx.conf:/etc/app-lan/nginx.conf:ro
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8088/_lan_health | grep -qx ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+networks:
+  backend:
+    external: true
+    name: "${APP_DOCKER_NETWORK:?Specify existing business network}"

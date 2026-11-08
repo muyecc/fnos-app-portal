@@ -1,0 +1,15 @@
+{
+  ".url": {
+    "example-portal.main": {
+      "title": "Example App",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "",
+      "gatewayPrefix": "/app/example-portal",
+      "gatewaySocket": "app.sock",
+      "url": "/app/example-portal/",
+      "allUsers": false,
+      "control": { "accessPerm": "readonly" }
+    }
+  }
+}

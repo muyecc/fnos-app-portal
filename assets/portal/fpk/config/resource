@@ -1,0 +1,5 @@
+{
+  "docker-project": {
+    "projects": [{ "name": "example-portal", "path": "docker" }]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "prefix": "/app/example-portal",
+  "socket": "/app/target/app.sock",
+  "upstream": "http://example-app:8088",
+  "static_dir": "/app/target/dashboard",
+  "frontend_version": "1.0.0-portal1",
+  "gateway_peer_uids": [
+    0
+  ],
+  "allowed_user_ids": [],
+  "admins_only": true,
+  "public_hosts": [
+    "nas.example.com"
+  ],
+  "allowed_origins": [
+    "https://nas.example.com"
+  ],
+  "http_cookie_ips": [],
+  "secure_cookie": true,
+  "lease_seconds": 30
+}

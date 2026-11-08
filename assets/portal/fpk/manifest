@@ -1,0 +1,14 @@
+appname=example-portal
+version=0.1.0
+display_name=Example App
+desc=Independent fnOS application portal
+platform=x86
+source=thirdparty
+maintainer=Example Maintainer
+distributor=Example Maintainer
+desktop_uidir=ui
+desktop_applaunchname=example-portal.main
+ctl_stop=true
+checkport=false
+disable_authorization_path=true
+os_min_version=1.2.0
